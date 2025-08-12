@@ -1,0 +1,83 @@
+================================================================================
+Requirements and Installation
+================================================================================
+
+- **Python**: 3.7 or later.
+- **Libraries**:
+  - torch (PyTorch, 1.10.1+cu111)
+  - numpy
+  - pandas
+  - matplotlib
+  - tqdm
+  - scipy (version 1.7.3)
+  - notebook (Jupyter Notebook)
+- **Additional Tools**:
+  - FFmpeg (for saving animations as MP4)
+
+If you encounter a codec error when saving videos or viewing them in HTML, install FFmpeg from: https://ffmpeg.org/download.html
+
+================================================================================
+Directory Structure
+================================================================================
+
+project_directory/
+├── Raw data (All_Data_frames.csv)       # Experimental ant trajectory data. please download from 'https://zenodo.org/records/16797507'
+├── Simulation/                # Contains simulation code (e.g., Numerical_simulation_ants.ipynb).
+│   └── Results/              # Directory for saving animation MP4 files and figures generated during numerical simulation.
+├── Model/                     # Contains trained model files.
+│   ├── ODE/                  # Baseline trajectory model files (trained from experimental data).
+│   └── PDE/                  # Integrated footprint concentration and perception-response model files.
+└── Training/                  # Contains notebooks for training and analysis.
+    ├── Selective_averaging/              # Notebook for selective averaging of response functions.
+    ├── Trained_model_load_and_visualization/  # Notebook for loading models and visualizing results.
+    ├── Training_experimental_trajectory/      # Notebook for training baseline trajectory models.
+    ├── Training_footprint_and_perception-response/  # Notebook for training integrated footprint concentration and response models.
+    └── Video/                          # Directory for saving animation MP4 files generated during training and visualization.
+
+*Note*: Create the folders Model/ODE, Model/PDE, Simulation/Results, and Training/Video if they do not exist.
+
+================================================================================
+How to Run the Code
+================================================================================
+
+1. **Setup and Data Preparation**
+   - Install the required libraries and FFmpeg.
+   - Ensure that All_Data_frames.csv is in the top-level project directory.
+   - Open a Jupyter Notebook or Jupyter Lab session in the project directory.
+
+2. **Run Trajectory Training**
+   - Open and run the notebook in Training/Training_experimental_trajectory/.
+   - Key variables to note:
+       - `num_colony`: The colony identifier (default: 620).
+       - `size_ant`: The ant size class (default: 'L' for large ants).
+       - `num_t`: Number of time steps per segment (e.g., 100 for 100-second intervals).
+   - The notebook segments the data using these parameters, trains the PINN_ODE model for each segment, and saves models in Model/ODE/ (e.g., "620L_step-100s_model_ode_{index}").
+
+3. **Run Integrated Footprint & Response Training**
+   - Open and run the notebook in Training/Training_footprint_and_perception-response/.
+   - Ensure `num_colony` and `size_ant` match the previous notebook.
+   - This notebook performs the following:
+       - Loads baseline trajectory models from Model/ODE/.
+       - Computes ant speeds and determines an active movement threshold (stored in a variable such as `u_mag_boundary`).
+       - Trains the integrated models:
+           - **PINN_PDE** for the footprint concentration field.
+           - **Mechanism_NN** for the perception-response function.
+       - **PDE Parameters**: The notebook sets the following key physical parameters:
+           - `self.kp = 0.01` : Footprint production rate – the rate at which ants deposit footrprint concentration.
+           - `self.km = 0.2`  : Footprint decay rate – the rate at which the footprint concentration decreases over time.
+           - `self.ph_r = 0.03` : Production radius – approximates the ant's body size, defining the spatial scale of footrprint deposition.
+       - The integrated models are saved in Model/PDE/ with filenames such as "620L_step-100s_model_pde_{index}" and "620L_step-100s_model_anten_{index}".
+
+4. **Perform Selective Averaging**
+   - Open and run the notebook in Training/Selective_averaging/.
+   - This notebook loads the integrated response models (Mechanism_NN), evaluates them across a range of footprint concentration gradients, and computes the average response curve.
+   - It stores the mean response in `anten_mean` and the standard deviation in `anten_std`, and generates a plot with error bounds.
+
+5. **Visualize Trained Models**
+   - Open and run the notebook in Training/Trained_model_load_and_visualization/.
+   - Set the variable `selected_index` (e.g., 0 for the first interval) at the top of the notebook.
+   - The notebook:
+       - Loads the corresponding baseline model from Model/ODE/ and integrated models from Model/PDE/.
+       - Generates animations and plots (e.g., ant trajectories and the evolving pheromone field).
+       - Saves MP4 animations in Training/Video/ and displays them inline.
+       - Video files are named using actual variables (e.g., "Trajectory_620L_step-{selected_index}.mp4").
