@@ -1,5 +1,5 @@
 # Training and simulation of ants behavior
-Original code for the "Ants Aggregate by Escaping from an Information Void"\
+Original code for the "Ants aggregate to avoid spatially weak variation of chemical cues"\
 ⚠️Please read /How_to_use.txt, /Training/Readme_training.txt, and /Simulation/Readme_simulation.txt
 
 
